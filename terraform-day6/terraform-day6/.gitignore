@@ -1,0 +1,30 @@
+# ─── TERRAFORM STATE — NEVER COMMIT THESE ────────────────────────────────────
+# State files contain secrets (passwords, keys) in plaintext
+
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# ─── TERRAFORM WORKING DIRECTORIES ───────────────────────────────────────────
+
+.terraform/
+.terraform.lock.hcl
+
+# ─── SENSITIVE VARIABLE FILES ─────────────────────────────────────────────────
+# These may contain AWS credentials or secrets
+
+*.tfvars
+*.tfvars.json
+!example.tfvars   # Allow example files to be committed as templates
+
+# ─── CRASH LOGS ───────────────────────────────────────────────────────────────
+
+crash.log
+crash.*.log
+
+# ─── OVERRIDE FILES ───────────────────────────────────────────────────────────
+
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json

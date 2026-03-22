@@ -1,0 +1,35 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "TerraformStateS3Access",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:ListBucket",
+        "s3:GetBucketVersioning",
+        "s3:GetBucketAcl",
+        "s3:GetBucketLogging",
+        "s3:GetBucketPolicy",
+        "s3:GetBucketObjectLockConfiguration"
+      ],
+      "Resource": [
+        "arn:aws:s3:::wadondera-terraform-state-556684850027",
+        "arn:aws:s3:::wadondera-terraform-state-556684850027/*"
+      ]
+    },
+    {
+      "Sid": "TerraformStateDynamoDBLocking",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+      ],
+      "Resource": "arn:aws:dynamodb:us-east-1:YOUR-ACCOUNT-ID:table/terraform-state-locks"
+    }
+  ]
+}
