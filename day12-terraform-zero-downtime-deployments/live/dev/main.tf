@@ -30,6 +30,18 @@ provider "aws" {
   }
 }
 
+
+ # ── Blue/Green config ──────────────────────────────────────────────────────
+  # Blue = currently deployed version
+  blue_app_version = "v1"
+
+  # Green = new version ready to receive traffic
+  green_app_version = "v2"
+
+  # Change this to "green" and re-apply to switch live traffic
+  active_environment = "blue"
+
+  
 module "webserver_cluster" {
   source = "../../modules/webserver-cluster"
 
@@ -39,15 +51,6 @@ module "webserver_cluster" {
   min_size      = 1
   max_size       = 2
 
-  # ── Blue/Green config ──────────────────────────────────────────────────────
-  # Blue = currently deployed version
-  blue_app_version = "v1"
-
-  # Green = new version ready to receive traffic
-  green_app_version = "v2"
-
-  # Change this to "green" and re-apply to switch live traffic
-  active_environment = "blue"
 }
 
 # ── Outputs ──────────────────────────────────────────────────────────────────

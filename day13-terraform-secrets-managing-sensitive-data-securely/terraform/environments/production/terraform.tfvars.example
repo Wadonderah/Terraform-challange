@@ -1,0 +1,25 @@
+# =============================================================================
+# terraform.tfvars.example
+# =============================================================================
+# Copy this file to terraform.tfvars and fill in your real values.
+#
+# cp terraform.tfvars.example terraform.tfvars
+#
+# Get your values with these commands:
+#
+#   Account ID:  aws sts get-caller-identity --query Account --output text
+#   VPC ID:      aws ec2 describe-vpcs --region ap-northeast-2 --query "Vpcs[*].VpcId" --output table
+#   Subnet IDs:  aws ec2 describe-subnets --region ap-northeast-2 --query "Subnets[*].[SubnetId,AvailabilityZone]" --output table
+# =============================================================================
+
+aws_region     = "ap-northeast-2"
+aws_account_id = "123456789012"         # your 12-digit AWS account ID
+
+vpc_id             = "vpc-xxxxxxxxxxxxxxxxx"
+private_subnet_ids = [
+  "subnet-xxxxxxxxxxxxxxxxx",           # ap-northeast-2a
+  "subnet-xxxxxxxxxxxxxxxxx"            # ap-northeast-2b
+]
+
+environment    = "production"
+db_secret_name = "prod/db/credentials"

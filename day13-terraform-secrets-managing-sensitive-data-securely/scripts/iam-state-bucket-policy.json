@@ -1,0 +1,72 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowTerraformStateAccess",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": [
+          "arn:aws:iam::123456789012:role/TerraformExecutionRole",
+          "arn:aws:iam::123456789012:role/CICDDeployRole"
+        ]
+      },
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::acme-terraform-state-prod/production/*"
+    },
+    {
+      "Sid": "AllowListBucket",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": [
+          "arn:aws:iam::123456789012:role/TerraformExecutionRole",
+          "arn:aws:iam::123456789012:role/CICDDeployRole"
+        ]
+      },
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::acme-terraform-state-prod",
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": ["production/*"]
+        }
+      }
+    },
+    {
+      "Sid": "DenyAllOtherPrincipals",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:*",
+      "Resource": [
+        "arn:aws:s3:::acme-terraform-state-prod",
+        "arn:aws:s3:::acme-terraform-state-prod/*"
+      ],
+      "Condition": {
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::123456789012:role/TerraformExecutionRole",
+            "arn:aws:iam::123456789012:role/CICDDeployRole",
+            "arn:aws:iam::123456789012:root"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "DenyUnencryptedTransport",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:*",
+      "Resource": [
+        "arn:aws:s3:::acme-terraform-state-prod",
+        "arn:aws:s3:::acme-terraform-state-prod/*"
+      ],
+      "Condition": {
+        "Bool": {
+          "aws:SecureTransport": "false"
+        }
+      }
+    }
+  ]
+}

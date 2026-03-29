@@ -1,0 +1,67 @@
+# =============================================================================
+# .gitignore — Terraform Project
+# =============================================================================
+# Every entry here protects either secrets, large binaries, or machine-specific
+# files that have no place in a shared repository.
+# =============================================================================
+
+# ── Terraform Working Directory ───────────────────────────────────────────────
+# Contains downloaded provider binaries (often 100MB+), cached modules, and
+# provider lock files. Never commit — let each developer or CI run re-download.
+.terraform/
+
+# ── Provider Lock File ────────────────────────────────────────────────────────
+# Uncomment to exclude. If you want reproducible provider versions across all
+# developers and CI runs, COMMIT this file. If you manage versions via
+# required_providers version constraints only, exclude it.
+# .terraform.lock.hcl
+
+# ── State Files ───────────────────────────────────────────────────────────────
+# Local state files contain plaintext secrets (passwords, tokens, certificates)
+# for every resource that accepts them. NEVER commit state files.
+# Use remote state (S3 + DynamoDB) exclusively for any team environment.
+*.tfstate
+*.tfstate.backup
+
+# ── Variable Value Files ──────────────────────────────────────────────────────
+# .tfvars and .tfvars.json files typically contain environment-specific values.
+# They often contain secrets (database passwords, API keys). Exclude all of
+# them by default. Only add back files confirmed to contain zero secret values.
+*.tfvars
+*.tfvars.json
+
+# Exception: if you have a non-secret example file for onboarding:
+# !terraform.tfvars.example
+
+# ── Override Files ────────────────────────────────────────────────────────────
+# Used for local developer overrides (e.g., switching to a local backend for
+# development). Machine-specific, never shared.
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# ── CLI Configuration ─────────────────────────────────────────────────────────
+# Contains credentials for Terraform Cloud / Enterprise.
+.terraformrc
+terraform.rc
+
+# ── Crash Logs ────────────────────────────────────────────────────────────────
+# Terraform crash logs can contain fragments of state data and sensitive values.
+crash.log
+crash.*.log
+
+# ── Environment Variable Files ────────────────────────────────────────────────
+# .env files are frequently used to export TF_VAR_* variables. If a developer
+# puts a password in .env, this rule prevents it from being committed.
+.env
+.env.*
+.envrc
+
+# ── IDE and OS Files ──────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
