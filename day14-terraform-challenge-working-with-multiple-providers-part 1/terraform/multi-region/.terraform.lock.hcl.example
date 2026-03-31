@@ -1,0 +1,61 @@
+# This file is maintained automatically by "terraform init".
+# Manual edits may be lost in future updates.
+# COMMIT THIS FILE to version control — it pins the exact provider version
+# so every team member and CI system uses identical binaries.
+
+provider "registry.terraform.io/hashicorp/aws" {
+  # version    — The exact version selected by terraform init.
+  #              Terraform evaluated the constraint "~> 5.0" against all
+  #              published releases and locked on 5.82.0 as the newest match.
+  version = "5.82.0"
+
+  # constraints — The raw constraint string from your required_providers block.
+  #               Stored here so Terraform can warn if you later tighten it.
+  constraints = "~> 5.0"
+
+  # hashes     — Cryptographic checksums for every platform binary.
+  #              Terraform verifies the downloaded binary against these hashes
+  #              before trusting it. If the hash doesn't match, init fails.
+  #              h1: = HashiCorp's preferred "hash scheme 1" (SHA-256 of zip).
+  #              zh: = ziphash (SHA-256 of the zip archive itself, not content).
+  hashes = [
+    "h1:3k4iFVVlHHaNoFKxz4TKPdRJYSS3F4gOR9BWBV9FQIY=",
+    "zh:0b4a9cb48b55aa1c7059b57e24e79aa78a3c7c0d67b5f8e21b2d0e7b46a3d10a",
+    "zh:0e8d1b4c4f99e31f20f52c89b9fcf0b7c5c6e63f20c5f9c1a67ab2d5fbe2bc3d",
+    "zh:1a5b67f84c890e2b5d4389b76c8f8990b38e0c4f7e1c9b4e3d5b7d4f6e8a0c2e",
+    "zh:2b6c78095da901b6e5489c87e9a0091c49f1d5b8f2d0ea5f4e6b8c3d7a9b1e3f",
+    "zh:3c7d89106eb012c7f650ad98fa0b102d5a02e6c9e3e1fb6050d7c4e8b0a2c4a5",
+    "zh:4d8e90217fc123d8e761be09ab1c213e6b13f7daef4020c7161e8d5f9c1b3d5b",
+    "zh:5e9f01328ed234e9f872cf10bc2d324f7c24a8ebfb5131d8272f9e6aad2c4e6c",
+    "zh:6fa012439fe345fa0983d021cd3e435a8d35b9fce0c642e9383a0f7bbe3d5f7d",
+    "zh:7ab1234abcd56eb1094e132de4f546b9e4460afde1d753ea494b0a8cce4e6a8e",
+    "zh:8bc234bbcd67fc2105f243ef5050657afe571b0ef2e864fb5a5c1b9ddf5f7b9f",
+    "zh:9cd345ccde78ad3216a354fa6161768baf682c1fd3f975ac6b6d2caeea0a8c0a",
+    "zh:ade456ddef89be4327b465ab7272879cba793d2ae4a086bc7c7d3dbffb1b9d1b",
+  ]
+}
+
+###############################################################################
+# HOW TO READ THIS FILE
+#
+# Field        | Meaning
+# -------------|--------------------------------------------------------------
+# version      | Exact locked version. terraform init will not upgrade past
+#              | this unless you run: terraform init -upgrade
+# constraints  | The constraint expression from required_providers.
+#              | Used only for informational drift detection.
+# hashes       | Multi-platform checksums. Populated for every OS/arch combo
+#              | when team members run terraform init on different machines.
+#              | Guarantees supply-chain integrity — nobody can swap a binary.
+#
+# WHY COMMIT THIS FILE?
+# 1. Reproducibility  — Every developer runs the exact same provider binary.
+# 2. Security         — Hash verification prevents tampered binary injection.
+# 3. CI consistency   — Your pipeline uses the same version as your laptop.
+# 4. Audit trail      — Git history shows exactly when you upgraded a provider.
+#
+# HOW TO UPGRADE
+#   terraform init -upgrade          # Upgrades to newest version within constraint
+#   terraform providers lock         # Updates hashes for all platforms
+#   git add .terraform.lock.hcl && git commit -m "chore: upgrade aws provider"
+###############################################################################
