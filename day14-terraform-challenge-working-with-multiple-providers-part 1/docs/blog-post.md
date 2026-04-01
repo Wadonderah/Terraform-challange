@@ -2,7 +2,6 @@
 
 *Day 14 of the 30-Day Terraform Challenge | AWS AI/ML UserGroup Kenya × EveOps*
 
----
 
 ## Introduction
 
@@ -10,23 +9,21 @@ One of the most powerful — and most misunderstood — features in Terraform is
 
 Today I deployed a fully working S3 cross-region replication setup using two AWS regions and a single Terraform configuration. Here is everything I learned.
 
----
 
 ## What Is a Provider?
 
 A **provider** is a plugin that translates Terraform's declarative resource blocks into actual API calls for a specific platform. When you write:
 
-```hcl
+
 resource "aws_s3_bucket" "my_bucket" {
   bucket = "my-bucket-name"
 }
-```
+
 
 Terraform does not know how to talk to AWS on its own. The `hashicorp/aws` provider translates that resource declaration into the correct S3 `CreateBucket` API call, handles authentication, deals with retries, and maps the response back into Terraform state.
 
 Providers exist for every major platform: AWS, Azure, GCP, Kubernetes, Datadog, GitHub, and hundreds more — all available on the [Terraform Registry](https://registry.terraform.io/).
 
----
 
 ## Provider Installation: What Happens at `terraform init`
 

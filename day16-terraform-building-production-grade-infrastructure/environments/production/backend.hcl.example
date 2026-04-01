@@ -1,0 +1,10 @@
+# Copy this file to backend.hcl and fill in your actual bucket name.
+# Run: terraform init -backend-config=backend.hcl
+#
+# Create the bucket first: bash ../../scripts/bootstrap-remote-state.sh
+
+bucket         = "myapp-terraform-state-prod-ACCOUNTID"
+key            = "production/terraform.tfstate"
+region         = "us-east-1"
+dynamodb_table = "terraform-state-lock"
+encrypt        = true

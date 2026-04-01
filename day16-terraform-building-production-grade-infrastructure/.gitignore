@@ -1,0 +1,46 @@
+# Terraform state files — NEVER commit these
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Terraform working directory
+.terraform/
+.terraform.lock.hcl
+
+# Variable files containing real values (use .example files in git)
+*.tfvars
+!*.tfvars.example
+
+# Backend config files containing bucket names (use .example files in git)
+backend.hcl
+!backend.hcl.example
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Sensitive override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI configuration files with credentials
+.terraformrc
+terraform.rc
+
+# macOS
+.DS_Store
+
+# Editor directories and files
+.idea/
+*.swp
+*.swo
+.vscode/
+
+# Go test artifacts
+tests/vendor/
+tests/*.test
+
+# Generated plans (contain sensitive data in plaintext)
+*.tfplan
