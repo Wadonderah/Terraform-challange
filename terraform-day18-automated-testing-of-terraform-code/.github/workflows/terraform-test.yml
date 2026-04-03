@@ -1,0 +1,225 @@
+# .github/workflows/terraform-test.yml
+#
+# Day 18: CI/CD Pipeline for Terraform Automated Testing
+#
+# PIPELINE DESIGN
+# ---------------
+# The pipeline has three jobs with explicit dependency ordering:
+#
+#   unit-tests  →  integration-tests  →  e2e-tests
+#       ↑                  ↑                  ↑
+#   Every PR         Push to main        Push to main
+#   (free, fast)     (after unit pass)   (after int pass)
+#
+# WHY THIS ORDER?
+# Unit tests catch 80% of mistakes in seconds and cost nothing.
+# Running integration tests before unit tests would waste 10
+# minutes and ~$0.10 of AWS spend on a bug terraform validate
+# would have caught instantly. Gate cheap tests first.
+#
+# WHY INTEGRATION TESTS ONLY ON PUSH TO MAIN?
+# Integration tests deploy real AWS infrastructure. Running
+# them on every PR from every contributor would:
+#   1. Incur AWS costs for every draft PR, WIP commit, typo fix
+#   2. Hit AWS service limits in busy repositories
+#   3. Slow down the PR feedback loop to 15+ minutes
+# The correct tradeoff: fast unit test feedback on every PR,
+# full integration validation before the change reaches main.
+#
+# SECRETS REQUIRED (set in GitHub repository settings)
+# AWS_ACCESS_KEY_ID      — IAM user or role with EC2/ELB/VPC permissions
+# AWS_SECRET_ACCESS_KEY  — never commit credentials directly
+
+name: Terraform Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+
+  ##############################################################
+  # JOB 1: Unit Tests
+  # Runs on EVERY pull request and every push.
+  # No AWS credentials needed — command = plan tests only.
+  # Completes in under 60 seconds.
+  ##############################################################
+
+  unit-tests:
+    name: Unit Tests (terraform test)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        # Fail fast on formatting issues — saves time in code review
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+        working-directory: modules/services/webserver-cluster
+        # -backend=false skips remote state init — not needed for unit tests
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: modules/services/webserver-cluster
+
+      - name: Run Unit Tests
+        run: terraform test
+        working-directory: modules/services/webserver-cluster
+        # Runs all *.tftest.hcl files found in the directory.
+        # command = plan blocks require no AWS credentials.
+
+  ##############################################################
+  # JOB 2: Integration Tests
+  # Only runs on push to main — after unit tests pass.
+  # Deploys real AWS infrastructure. Requires AWS credentials.
+  # Expected duration: 10-15 minutes.
+  ##############################################################
+
+  integration-tests:
+    name: Integration Tests (Terratest)
+    runs-on: ubuntu-latest
+
+    # Only run integration tests on merge to main, not on PRs.
+    # This prevents AWS cost accumulation from every draft PR.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    # Integration tests only run after unit tests pass.
+    # If a unit test fails, there is no point deploying real infra.
+    needs: unit-tests
+
+    env:
+      # Never hardcode credentials — always use repository secrets.
+      # Set these in: GitHub repo → Settings → Secrets and variables → Actions
+      AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION:    us-east-1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+          cache: true
+          cache-dependency-path: test/go.sum
+
+      - name: Download Go dependencies
+        run: go mod download
+        working-directory: test
+
+      - name: Run Integration Tests
+        run: |
+          go test \
+            -v \
+            -run "TestWebserverClusterIntegration|TestWebserverClusterWithCustomText" \
+            -timeout 30m \
+            ./...
+        working-directory: test
+        # -v: verbose output — shows each test step in CI logs
+        # -run: only integration tests, not E2E tests
+        # -timeout 30m: fail the job if tests take longer than 30 minutes
+        #   (prevents stuck tests from consuming runner hours indefinitely)
+
+      - name: Verify No Orphaned Resources
+        if: always()
+        # 'always()' runs this step even if integration tests fail —
+        # ensuring cleanup verification happens regardless of test outcome.
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION:    us-east-1
+        run: |
+          echo "=== Checking for orphaned EC2 instances ==="
+          aws ec2 describe-instances \
+            --filters "Name=tag:ManagedBy,Values=terraform" \
+                      "Name=instance-state-name,Values=running,stopped,pending" \
+            --query "Reservations[*].Instances[*].{ID:InstanceId,Name:Tags[?Key=='Name']|[0].Value}" \
+            --output table
+
+          echo "=== Checking for orphaned Load Balancers ==="
+          aws elbv2 describe-load-balancers \
+            --query "LoadBalancers[?contains(LoadBalancerName,'test-cluster')].{Name:LoadBalancerName,ARN:LoadBalancerArn}" \
+            --output table
+
+  ##############################################################
+  # JOB 3: End-to-End Tests
+  # Only runs on push to main — after integration tests pass.
+  # Deploys full stack (VPC + webserver). Takes 15-30 minutes.
+  # Expected cost per run: ~$0.30-0.60 USD.
+  ##############################################################
+
+  e2e-tests:
+    name: End-to-End Tests (Terratest)
+    runs-on: ubuntu-latest
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    # E2E tests depend on integration tests passing.
+    # If the webserver module fails in isolation (integration),
+    # there is no value in testing it within the full stack (E2E).
+    needs: integration-tests
+
+    env:
+      AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION:    us-east-1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+          cache: true
+          cache-dependency-path: test/go.sum
+
+      - name: Download Go dependencies
+        run: go mod download
+        working-directory: test
+
+      - name: Run End-to-End Tests
+        run: |
+          go test \
+            -v \
+            -run "TestFullStackEndToEnd" \
+            -timeout 45m \
+            ./...
+        working-directory: test
+
+      - name: Post E2E Cleanup Verification
+        if: always()
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION:    us-east-1
+        run: |
+          echo "=== Post E2E orphan check ==="
+          aws ec2 describe-instances \
+            --filters "Name=tag:ManagedBy,Values=terraform" \
+                      "Name=instance-state-name,Values=running" \
+            --query "Reservations[*].Instances[*].InstanceId" \
+            --output text
+
+          aws elbv2 describe-load-balancers \
+            --query "LoadBalancers[?contains(LoadBalancerName,'test-')].LoadBalancerName" \
+            --output text
+
+          aws ec2 describe-vpcs \
+            --filters "Name=tag:ManagedBy,Values=terraform" \
+            --query "Vpcs[*].VpcId" \
+            --output text
