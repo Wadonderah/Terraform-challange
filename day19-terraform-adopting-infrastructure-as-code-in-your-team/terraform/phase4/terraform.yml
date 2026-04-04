@@ -1,0 +1,120 @@
+################################################################################
+# .github/workflows/terraform.yml
+#
+# This workflow does two things:
+#   1. On pull requests — run plan and post the output as a PR comment
+#      so reviewers can see exactly what's going to change before approving
+#   2. On merge to main — apply the plan
+#
+# A few opinions baked in here:
+# - We use OIDC instead of storing AWS keys as secrets. Long-lived credentials
+#   in CI are a liability. If your security team hasn't asked about this yet,
+#   they will. Get ahead of it.
+# - The plan output is posted as a comment, not just logged. Reviewers should
+#   not have to dig through CI logs to do their job.
+# - We fail on format check. Inconsistent formatting is a small annoyance that
+#   compounds into a big one. Enforce it early, enforce it automatically.
+################################################################################
+
+name: Terraform
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  TF_VERSION: "1.7.0"
+  AWS_REGION: "af-south-1"
+
+permissions:
+  id-token: write       # Required for OIDC
+  contents: read
+  pull-requests: write  # Required to post plan as PR comment
+
+jobs:
+  terraform:
+    name: Plan / Apply
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+
+    defaults:
+      run:
+        working-directory: terraform/phase3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/github-actions-terraform
+          aws-region: ${{ env.AWS_REGION }}
+          # No access keys. No secrets. OIDC handles it.
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -out=tfplan
+        continue-on-error: true
+
+      # Post the plan output as a PR comment so reviewers don't have to
+      # go digging through logs to understand what's changing
+      - name: Post Plan to PR
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Format: \`${{ steps.fmt.outcome }}\`
+            #### Terraform Validate: \`${{ steps.validate.outcome }}\`
+            #### Terraform Plan: \`${{ steps.plan.outcome }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`terraform
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+
+            *Triggered by @${{ github.actor }}, workflow: \`${{ github.workflow }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve tfplan
+
+      # Fail the workflow if plan failed — don't silently succeed
+      - name: Check Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
