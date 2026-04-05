@@ -31,17 +31,17 @@ provider "aws" {
 }
 
 
- # ── Blue/Green config ──────────────────────────────────────────────────────
-  # Blue = currently deployed version
-  blue_app_version = "v1"
+# ── Blue/Green config ──────────────────────────────────────────────────────
+# Blue = currently deployed version
+blue_app_version = "v1"
 
-  # Green = new version ready to receive traffic
-  green_app_version = "v2"
+# Green = new version ready to receive traffic
+green_app_version = "v2"
 
-  # Change this to "green" and re-apply to switch live traffic
-  active_environment = "blue"
+# Change this to "green" and re-apply to switch live traffic
+active_environment = "blue"
 
-  
+
 module "webserver_cluster" {
   source = "../../modules/webserver-cluster"
 
@@ -49,14 +49,14 @@ module "webserver_cluster" {
   environment   = "dev"
   instance_type = "t3.micro"
   min_size      = 1
-  max_size       = 2
+  max_size      = 2
 
 }
 
 # ── Outputs ──────────────────────────────────────────────────────────────────
 
-output "alb_dns_name"        { value = module.webserver_cluster.alb_dns_name }
-output "active_environment"  { value = module.webserver_cluster.active_environment }
+output "alb_dns_name" { value = module.webserver_cluster.alb_dns_name }
+output "active_environment" { value = module.webserver_cluster.active_environment }
 output "traffic_loop_command" { value = module.webserver_cluster.traffic_loop_command }
-output "blue_asg"            { value = module.webserver_cluster.blue_asg_name }
-output "green_asg"           { value = module.webserver_cluster.green_asg_name }
+output "blue_asg" { value = module.webserver_cluster.blue_asg_name }
+output "green_asg" { value = module.webserver_cluster.green_asg_name }

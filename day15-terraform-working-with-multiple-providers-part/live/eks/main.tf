@@ -136,7 +136,7 @@ module "vpc" {
   public_subnets  = [for k, v in slice(data.aws_availability_zones.available.names, 0, 3) : cidrsubnet(var.vpc_cidr, 4, k + 4)]
 
   enable_nat_gateway   = true
-  single_nat_gateway   = true   # Cost optimisation for dev; use false in prod
+  single_nat_gateway   = true # Cost optimisation for dev; use false in prod
   enable_dns_hostnames = true
   enable_dns_support   = true
 
@@ -167,7 +167,7 @@ module "eks" {
 
   vpc_id                         = module.vpc.vpc_id
   subnet_ids                     = module.vpc.private_subnets
-  cluster_endpoint_public_access = true   # Allows `kubectl` from your laptop
+  cluster_endpoint_public_access = true # Allows `kubectl` from your laptop
 
   # EKS Managed Node Groups — AWS manages the underlying EC2 autoscaling group
 
@@ -181,10 +181,10 @@ module "eks" {
       desired_size = 2
 
       # Use AL2 for broad compatibility; switch to AL2023 for newer clusters
-      
+
       ami_type = "AL2_x86_64"
 
-      disk_size = 20   # GB per node
+      disk_size = 20 # GB per node
 
       labels = {
         role = "worker"
@@ -195,7 +195,7 @@ module "eks" {
   }
 
   # Allow the caller's IAM identity to administer the cluster via kubectl
-  
+
   enable_cluster_creator_admin_permissions = true
 
   tags = merge(local.common_tags, {

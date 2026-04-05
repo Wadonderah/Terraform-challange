@@ -53,7 +53,7 @@ resource "docker_container" "nginx" {
   restart = "unless-stopped"
 
   # Map host port 8080 → container port 80
-  
+
   ports {
     internal = 80
     external = var.host_port

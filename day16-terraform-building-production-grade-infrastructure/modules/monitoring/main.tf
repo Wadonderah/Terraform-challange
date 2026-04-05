@@ -248,9 +248,9 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 12
         height = 6
         properties = {
-          title  = "Request Count & 5xx Errors"
-          region = data.aws_region.current.name
-          period = 60
+          title       = "Request Count & 5xx Errors"
+          region      = data.aws_region.current.name
+          period      = 60
           annotations = {}
           metrics = [
             ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", var.alb_arn_suffix, { stat = "Sum", label = "Requests" }],
@@ -285,9 +285,9 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 12
         height = 6
         properties = {
-          title  = "ASG Instance Count"
-          region = data.aws_region.current.name
-          period = 60
+          title       = "ASG Instance Count"
+          region      = data.aws_region.current.name
+          period      = 60
           annotations = {}
           metrics = [
             ["AWS/AutoScaling", "GroupInServiceInstances", "AutoScalingGroupName", var.asg_name, { stat = "Average", label = "In Service" }],

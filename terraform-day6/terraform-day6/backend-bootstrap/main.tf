@@ -5,8 +5,8 @@ provider "aws" {
 # S3 bucket to store Terraform state
 
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = "wadondera-terraform-state-556684850027"
-   force_destroy = true
+  bucket        = "wadondera-terraform-state-556684850027"
+  force_destroy = true
 
   lifecycle {
     # prevent_destroy = true

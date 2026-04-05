@@ -21,11 +21,11 @@ module "webserver_cluster" {
 
   cluster_name       = "dev-webserver"
   environment        = "dev"
-  enable_autoscaling = false   # ← no autoscaling in dev: saves cost
+  enable_autoscaling = false # ← no autoscaling in dev: saves cost
 
   iam_users = {
     dev-alice = { department = "engineering", admin = true }
-    dev-bob   = { department = "qa",          admin = false }
+    dev-bob   = { department = "qa", admin = false }
   }
 
   security_group_rules = {
@@ -38,7 +38,7 @@ module "webserver_cluster" {
     ssh = {
       port        = 22
       protocol    = "tcp"
-      cidr_blocks = ["10.0.0.0/8"]  # internal only in dev
+      cidr_blocks = ["10.0.0.0/8"] # internal only in dev
       description = "SSH from VPN"
     }
   }

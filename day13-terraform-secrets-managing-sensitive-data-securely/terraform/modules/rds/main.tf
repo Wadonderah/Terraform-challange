@@ -18,8 +18,8 @@ resource "aws_db_instance" "this" {
   storage_encrypted     = true
 
   db_name  = var.db_name
-  username = var.db_username   # Sensitive — sourced from Secrets Manager by caller
-  password = var.db_password   # Sensitive — sourced from Secrets Manager by caller
+  username = var.db_username # Sensitive — sourced from Secrets Manager by caller
+  password = var.db_password # Sensitive — sourced from Secrets Manager by caller
 
   db_subnet_group_name   = var.db_subnet_group_name
   vpc_security_group_ids = var.vpc_security_group_ids

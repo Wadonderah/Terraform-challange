@@ -35,10 +35,10 @@ variable "cluster_name" {
 # ── Local: centralise conditional logic ──────────────────────
 # Keep ternaries in ONE place rather than scattered across resources.
 locals {
-  instance_type  = var.environment == "production" ? "t3.medium" : "t3.micro"
-  min_size       = var.environment == "production" ? 3 : 1
-  max_size       = var.environment == "production" ? 10 : 3
-  desired        = var.environment == "production" ? 3 : 1
+  instance_type       = var.environment == "production" ? "t3.medium" : "t3.micro"
+  min_size            = var.environment == "production" ? 3 : 1
+  max_size            = var.environment == "production" ? 10 : 3
+  desired             = var.environment == "production" ? 3 : 1
   deletion_protection = var.environment == "production" ? true : false
 
   common_tags = {
@@ -52,7 +52,7 @@ locals {
 resource "aws_launch_template" "web" {
   name_prefix   = "${var.cluster_name}-"
   image_id      = data.aws_ami.amazon_linux.id
-  instance_type = local.instance_type   # ← conditional via local
+  instance_type = local.instance_type # ← conditional via local
 
   user_data = base64encode(<<-EOF
     #!/bin/bash
@@ -105,7 +105,7 @@ resource "aws_autoscaling_group" "web" {
 # This is the canonical Terraform pattern for optional resources.
 
 resource "aws_autoscaling_policy" "scale_out" {
-  count = var.enable_autoscaling ? 1 : 0   # ← THE KEY PATTERN
+  count = var.enable_autoscaling ? 1 : 0 # ← THE KEY PATTERN
 
   name                   = "${var.cluster_name}-scale-out"
   autoscaling_group_name = aws_autoscaling_group.web.name
@@ -205,10 +205,10 @@ output "scale_out_policy_arn" {
 output "cluster_config_summary" {
   description = "Summary of cluster configuration for this environment"
   value = {
-    environment       = var.environment
-    instance_type     = local.instance_type
-    min_size          = local.min_size
-    max_size          = local.max_size
-    autoscaling_on    = var.enable_autoscaling
+    environment    = var.environment
+    instance_type  = local.instance_type
+    min_size       = local.min_size
+    max_size       = local.max_size
+    autoscaling_on = var.enable_autoscaling
   }
 }

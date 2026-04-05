@@ -32,13 +32,13 @@ provider "aws" {
 module "mysql" {
   source = "../../../../modules/data-stores/mysql"
 
-  db_name             = "devdb"
-  db_username         = var.db_username
-  db_password         = var.db_password
-  instance_class      = "db.t3.micro"
-  allocated_storage   = 20
-  skip_final_snapshot = true                        # Fine for dev — no need to keep a snapshot on destroy
-  backup_retention_period = 0                       # Disable backups in dev to save cost
+  db_name                 = "devdb"
+  db_username             = var.db_username
+  db_password             = var.db_password
+  instance_class          = "db.t3.micro"
+  allocated_storage       = 20
+  skip_final_snapshot     = true # Fine for dev — no need to keep a snapshot on destroy
+  backup_retention_period = 0    # Disable backups in dev to save cost
 
   custom_tags = {
     CostCenter = "engineering-dev"

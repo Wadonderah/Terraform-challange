@@ -33,10 +33,10 @@ module "webserver_cluster" {
   source = "../../../../modules/services/webserver-cluster"
 
   cluster_name       = "webservers-dev"
-  instance_type      = "t3.micro"                               # Free tier eligible
-  min_size           = 2                                        # 2 instances = HA across AZs
-  max_size           = 4                                        # Cap spend in dev
-  enable_autoscaling = false                                    # Stable environment for testing
+  instance_type      = "t3.micro" # Free tier eligible
+  min_size           = 2          # 2 instances = HA across AZs
+  max_size           = 4          # Cap spend in dev
+  enable_autoscaling = false      # Stable environment for testing
 
   custom_tags = {
     CostCenter = "engineering-dev"

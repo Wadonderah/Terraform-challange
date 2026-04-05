@@ -20,6 +20,6 @@ health_check_path    = "/"
 hello_world_version  = "v2"
 
 tags = {
-  Owner   = "platform-team"
+  Owner      = "platform-team"
   CostCenter = "engineering"
 }

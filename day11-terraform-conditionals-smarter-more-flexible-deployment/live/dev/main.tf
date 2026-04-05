@@ -29,7 +29,7 @@ module "webserver_cluster" {
   source = "../../modules/webserver-cluster"
 
   cluster_name = "webserver-dev"
-  environment  = "dev"            # ← drives ALL conditional sizing decisions
+  environment  = "dev" # ← drives ALL conditional sizing decisions
 
   # Feature flags — off in dev to keep costs minimal
   enable_detailed_monitoring = false
@@ -40,8 +40,8 @@ module "webserver_cluster" {
 }
 
 # ─── Outputs ─────────────────────────────────────────────────────────────────
-output "alb_dns_name"      { value = module.webserver_cluster.alb_dns_name }
-output "alarm_arn"         { value = module.webserver_cluster.alarm_arn }        # null in dev
-output "instance_type"     { value = module.webserver_cluster.instance_type }    # t3.micro
-output "cluster_min_size"  { value = module.webserver_cluster.cluster_min_size } # 1
-output "cluster_max_size"  { value = module.webserver_cluster.cluster_max_size } # 3
+output "alb_dns_name" { value = module.webserver_cluster.alb_dns_name }
+output "alarm_arn" { value = module.webserver_cluster.alarm_arn }               # null in dev
+output "instance_type" { value = module.webserver_cluster.instance_type }       # t3.micro
+output "cluster_min_size" { value = module.webserver_cluster.cluster_min_size } # 1
+output "cluster_max_size" { value = module.webserver_cluster.cluster_max_size } # 3

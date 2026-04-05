@@ -21,12 +21,12 @@ module "webserver_cluster" {
 
   cluster_name       = "prod-webserver"
   environment        = "production"
-  enable_autoscaling = true   # ← autoscaling ON in prod
+  enable_autoscaling = true # ← autoscaling ON in prod
 
   iam_users = {
     prod-alice = { department = "engineering", admin = true }
-    prod-carol = { department = "devops",      admin = true }
-    prod-dave  = { department = "marketing",   admin = false }
+    prod-carol = { department = "devops", admin = true }
+    prod-dave  = { department = "marketing", admin = false }
   }
 
   security_group_rules = {

@@ -46,8 +46,8 @@ data "aws_subnets" "default" {
 
 resource "aws_launch_template" "webserver" {
   name_prefix   = "${var.cluster_name}-"
-  image_id      = var.ami_id                                   # AMI passed in by the caller (default: Amazon Linux 2)
-  instance_type = var.instance_type                            # e.g. t2.micro for dev, t2.medium for prod
+  image_id      = var.ami_id        # AMI passed in by the caller (default: Amazon Linux 2)
+  instance_type = var.instance_type # e.g. t2.micro for dev, t2.medium for prod
 
   user_data = base64encode(templatefile("${path.module}/user-data.sh", {
     server_port  = var.server_port
@@ -57,9 +57,9 @@ resource "aws_launch_template" "webserver" {
   vpc_security_group_ids = [aws_security_group.instance.id]
 
   metadata_options {
-    http_endpoint               = "enabled"         # Keep metadata service on
-    http_tokens                 = "required"        # Force IMDSv2 — no token, no metadata
-    http_put_response_hop_limit = 1                 # Prevent metadata requests from leaving the instance
+    http_endpoint               = "enabled"  # Keep metadata service on
+    http_tokens                 = "required" # Force IMDSv2 — no token, no metadata
+    http_put_response_hop_limit = 1          # Prevent metadata requests from leaving the instance
   }
 
   lifecycle {
@@ -72,8 +72,8 @@ resource "aws_launch_template" "webserver" {
 }
 
 lifecycle {
-    create_before_destroy = true
-  }
+  create_before_destroy = true
+}
 
 
 
@@ -82,7 +82,7 @@ lifecycle {
 resource "aws_autoscaling_schedule" "scale_in_evening" {
   scheduled_action_name  = "${var.cluster_name}-scale-in-7pm"
   autoscaling_group_name = aws_autoscaling_group.webserver.name
-  recurrence             = "0 19 * * *"  # 7:00 PM EAT daily
+  recurrence             = "0 19 * * *" # 7:00 PM EAT daily
   min_size               = 1
   max_size               = var.max_size
   desired_capacity       = 1
@@ -91,7 +91,7 @@ resource "aws_autoscaling_schedule" "scale_in_evening" {
 resource "aws_autoscaling_schedule" "scale_out_morning" {
   scheduled_action_name  = "${var.cluster_name}-scale-out-8am"
   autoscaling_group_name = aws_autoscaling_group.webserver.name
-  recurrence             = "0 8 * * *"   # 8:00 AM EAT daily
+  recurrence             = "0 8 * * *" # 8:00 AM EAT daily
   min_size               = var.min_size
   max_size               = var.max_size
   desired_capacity       = var.min_size

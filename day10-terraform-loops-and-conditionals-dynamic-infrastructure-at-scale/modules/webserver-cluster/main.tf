@@ -94,11 +94,11 @@ variable "security_group_rules" {
 # ── Locals: ALL conditional logic lives here ───
 
 locals {
-  instance_type  = var.environment == "production" ? "t3.medium" : "t3.micro"
-  min_size       = var.environment == "production" ? 3 : 1
-  max_size       = var.environment == "production" ? 10 : 3
-  desired        = var.environment == "production" ? 3 : 1
-  ami            = var.ami_id != null ? var.ami_id : data.aws_ami.amazon_linux.id
+  instance_type = var.environment == "production" ? "t3.medium" : "t3.micro"
+  min_size      = var.environment == "production" ? 3 : 1
+  max_size      = var.environment == "production" ? 10 : 3
+  desired       = var.environment == "production" ? 3 : 1
+  ami           = var.ami_id != null ? var.ami_id : data.aws_ami.amazon_linux.id
 
   common_tags = {
     Environment = var.environment
@@ -195,7 +195,7 @@ resource "aws_iam_user_policy_attachment" "admin" {
 resource "aws_launch_template" "web" {
   name_prefix   = "${var.cluster_name}-"
   image_id      = local.ami
-  instance_type = local.instance_type   # ← conditional via local
+  instance_type = local.instance_type # ← conditional via local
 
   vpc_security_group_ids = [aws_security_group.web.id]
 
@@ -246,7 +246,7 @@ resource "aws_autoscaling_group" "web" {
 # ── Autoscaling Policies (OPTIONAL — controlled by count) ─────
 
 resource "aws_autoscaling_policy" "scale_out" {
-  count = var.enable_autoscaling ? 1 : 0   # 0 = resource skipped entirely
+  count = var.enable_autoscaling ? 1 : 0 # 0 = resource skipped entirely
 
   name                   = "${var.cluster_name}-scale-out"
   autoscaling_group_name = aws_autoscaling_group.web.name
@@ -339,14 +339,14 @@ output "admin_user_arns" {
 output "cluster_summary" {
   description = "Human-readable cluster configuration summary"
   value = {
-    name              = var.cluster_name
-    environment       = var.environment
-    instance_type     = local.instance_type
-    min_size          = local.min_size
-    max_size          = local.max_size
-    autoscaling_on    = var.enable_autoscaling
-    security_rules    = [for rule_name, rule in var.security_group_rules : "${rule_name}:${rule.port}"]
-    iam_user_count    = length(var.iam_users)
-    admin_user_count  = length(local.admin_users)
+    name             = var.cluster_name
+    environment      = var.environment
+    instance_type    = local.instance_type
+    min_size         = local.min_size
+    max_size         = local.max_size
+    autoscaling_on   = var.enable_autoscaling
+    security_rules   = [for rule_name, rule in var.security_group_rules : "${rule_name}:${rule.port}"]
+    iam_user_count   = length(var.iam_users)
+    admin_user_count = length(local.admin_users)
   }
 }

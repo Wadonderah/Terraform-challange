@@ -43,10 +43,10 @@ provider "aws" {
 module "webserver_cluster" {
   source = "github.com/Wadonderah/terraform-aws-webserver-cluster?ref=v0.0.1"
 
-  cluster_name  = "webservers-production"
-  instance_type = "t3.medium"                            # appropriately sized for production load
-  min_size      = 4
-  max_size      = 10
+  cluster_name             = "webservers-production"
+  instance_type            = "t3.medium" # appropriately sized for production load
+  min_size                 = 4
+  max_size                 = 10
   desired_capacity         = 6
   enable_cloudwatch_alarms = true
 

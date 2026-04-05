@@ -15,7 +15,7 @@ variable "user_names_set" {
 
 resource "aws_iam_user" "set_users" {
   for_each = var.user_names_set
-  name     = each.value   # each.key == each.value for sets
+  name     = each.value # each.key == each.value for sets
 
   tags = {
     ManagedBy = "Terraform"
@@ -35,14 +35,14 @@ variable "users" {
   }))
   default = {
     alice = { department = "engineering", admin = true }
-    bob   = { department = "marketing",   admin = false }
-    carol = { department = "devops",      admin = true }
+    bob   = { department = "marketing", admin = false }
+    carol = { department = "devops", admin = true }
   }
 }
 
 resource "aws_iam_user" "map_users" {
   for_each = var.users
-  name     = each.key   # map key becomes the resource identifier
+  name     = each.key # map key becomes the resource identifier
 
   tags = {
     Department = each.value.department

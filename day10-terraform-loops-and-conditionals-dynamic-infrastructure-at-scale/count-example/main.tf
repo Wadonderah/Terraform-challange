@@ -20,7 +20,7 @@ variable "user_names" {
 }
 
 resource "aws_iam_user" "from_list" {
-  count = length(var.user_names)          # count.index maps to list position
+  count = length(var.user_names) # count.index maps to list position
   name  = var.user_names[count.index]
 }
 
@@ -37,7 +37,7 @@ resource "aws_iam_user" "from_list" {
 # ── Referencing count resources in outputs ────────────────────
 output "simple_user_arns" {
   description = "ARNs of the simple count users (accessed as a list)"
-  value       = aws_iam_user.simple[*].arn   # splat expression → list
+  value       = aws_iam_user.simple[*].arn # splat expression → list
 }
 
 output "from_list_user_arns" {

@@ -5,10 +5,10 @@
 # Dev intentionally runs the newest module version so issues are caught
 # here before v0.0.2 is promoted to production.
 # -----------------------------------------------------------------------------
-  # RECOMMENDED: remote state for real teams
-  # NOTE: uncomment the backend block below to enable remote state storage
-  # NOTE: the backend configuration below is for demo purposes only
-  
+# RECOMMENDED: remote state for real teams
+# NOTE: uncomment the backend block below to enable remote state storage
+# NOTE: the backend configuration below is for demo purposes only
+
 terraform {
   required_version = ">= 1.0.0"
 
@@ -40,14 +40,14 @@ provider "aws" {
 module "webserver_cluster" {
   source = "github.com/Wadonderah/terraform-aws-webserver-cluster?ref=v0.0.2"
 
-  cluster_name  = "webservers-dev"
-  instance_type = "t3.micro"              # free tier eligible
-  min_size         = 1
-  max_size         = 2
-  desired_capacity = 1
+  cluster_name              = "webservers-dev"
+  instance_type             = "t3.micro" # free tier eligible
+  min_size                  = 1
+  max_size                  = 2
+  desired_capacity          = 1
   health_check_grace_period = 300
-  enable_cloudwatch_alarms = true
-  cpu_alarm_threshold      = 85           # looser threshold for dev noise reduction
+  enable_cloudwatch_alarms  = true
+  cpu_alarm_threshold       = 85 # looser threshold for dev noise reduction
 
   extra_tags = {
     Environment = "dev"

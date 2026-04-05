@@ -108,14 +108,14 @@ resource "aws_db_instance" "primary" {
   vpc_security_group_ids = [aws_security_group.rds[0].id]
   publicly_accessible    = false
 
-  multi_az                  = false   # Set true for production HA
-  backup_retention_period   = 0
-  backup_window             = "03:00-04:00"
-  maintenance_window        = "Mon:04:00-Mon:05:00"
+  multi_az                   = false # Set true for production HA
+  backup_retention_period    = 0
+  backup_window              = "03:00-04:00"
+  maintenance_window         = "Mon:04:00-Mon:05:00"
   auto_minor_version_upgrade = true
 
-  deletion_protection       = false   # Set true for real production
-  skip_final_snapshot       = true    # Set false for real production
+  deletion_protection       = false # Set true for real production
+  skip_final_snapshot       = true  # Set false for real production
   final_snapshot_identifier = "${var.environment}-rds-final-snapshot"
 
   tags = {

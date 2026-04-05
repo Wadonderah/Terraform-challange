@@ -24,8 +24,8 @@ variable "users" {
   }))
   default = {
     alice = { department = "engineering", admin = true }
-    bob   = { department = "marketing",   admin = false }
-    carol = { department = "devops",      admin = true }
+    bob   = { department = "marketing", admin = false }
+    carol = { department = "devops", admin = true }
   }
 }
 

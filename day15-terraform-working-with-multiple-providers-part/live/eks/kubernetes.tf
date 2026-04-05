@@ -81,11 +81,11 @@ resource "kubernetes_deployment" "nginx" {
           # Resource requests and limits — critical for the scheduler
           resources {
             requests = {
-              cpu    = "100m"   # 0.1 vCPU
+              cpu    = "100m" # 0.1 vCPU
               memory = "128Mi"
             }
             limits = {
-              cpu    = "200m"   # 0.2 vCPU
+              cpu    = "200m" # 0.2 vCPU
               memory = "256Mi"
             }
           }

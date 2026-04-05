@@ -33,11 +33,11 @@ module "webserver_cluster" {
   source = "../../../../modules/services/webserver-cluster"
 
   cluster_name              = "webservers-production"
-  instance_type             = "t2.medium"                                      # More headroom for real traffic
-  min_size                  = 4                                                # 4 minimum = baseline capacity + HA
-  max_size                  = 10                                               # Scale headroom for traffic spikes
-  health_check_grace_period = 300                                              # Allow app warm-up time
-  enable_autoscaling        = true                                             # Scale on CPU in production
+  instance_type             = "t2.medium" # More headroom for real traffic
+  min_size                  = 4           # 4 minimum = baseline capacity + HA
+  max_size                  = 10          # Scale headroom for traffic spikes
+  health_check_grace_period = 300         # Allow app warm-up time
+  enable_autoscaling        = true        # Scale on CPU in production
 
   custom_tags = {
     CostCenter  = "engineering-prod"

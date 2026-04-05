@@ -34,7 +34,7 @@ output "account_id" {
 
 output "deployment_summary" {
   description = "Human-readable summary of what was deployed"
-  value = <<-EOT
+  value       = <<-EOT
     ╔══════════════════════════════════════════════════════════════╗
     ║          Day 14 — Multi-Region S3 Replication               ║
     ╠══════════════════════════════════════════════════════════════╣

@@ -267,13 +267,13 @@ resource "aws_lb_listener" "http" {
 ##############################################################
 
 resource "aws_autoscaling_group" "example" {
-  name_prefix          = "${var.cluster_name}-"
-  min_size             = var.min_size
-  max_size             = var.max_size
-  desired_capacity     = var.min_size
-  vpc_zone_identifier  = local.subnet_ids
-  target_group_arns    = [aws_lb_target_group.example.arn]
-  health_check_type    = "ELB"
+  name_prefix               = "${var.cluster_name}-"
+  min_size                  = var.min_size
+  max_size                  = var.max_size
+  desired_capacity          = var.min_size
+  vpc_zone_identifier       = local.subnet_ids
+  target_group_arns         = [aws_lb_target_group.example.arn]
+  health_check_type         = "ELB"
   health_check_grace_period = 120
 
   launch_template {

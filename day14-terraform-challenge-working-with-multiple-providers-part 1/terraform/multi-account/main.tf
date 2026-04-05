@@ -34,8 +34,8 @@ provider "aws" {
 
   assume_role {
     # Replace with your production account role ARN
-    role_arn     = "arn:aws:iam::${var.production_account_id}:role/TerraformDeployRole"
-    session_name = "terraform-day14-prod"
+    role_arn         = "arn:aws:iam::${var.production_account_id}:role/TerraformDeployRole"
+    session_name     = "terraform-day14-prod"
     duration_seconds = 3600
 
     # Optional: tag the assumed session for CloudTrail auditing
@@ -60,8 +60,8 @@ provider "aws" {
 
   assume_role {
     # Replace with your staging account role ARN
-    role_arn     = "arn:aws:iam::${var.staging_account_id}:role/TerraformDeployRole"
-    session_name = "terraform-day14-staging"
+    role_arn         = "arn:aws:iam::${var.staging_account_id}:role/TerraformDeployRole"
+    session_name     = "terraform-day14-staging"
     duration_seconds = 3600
 
     tags = {

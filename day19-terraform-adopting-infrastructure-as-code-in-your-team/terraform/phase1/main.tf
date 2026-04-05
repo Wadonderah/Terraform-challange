@@ -18,23 +18,31 @@ terraform {
     }
   }
 
-  backend "s3" {
-    bucket         = "acme-terraform-state"
-    key            = "cloudtrail/terraform.tfstate"
-    region         = "af-south-1"
-    dynamodb_table = "terraform-lock"
-    encrypt        = true
+  # Temporary: comment out S3 backend to avoid 403
+  # backend "s3" {
+  #   bucket         = "acme-terraform-state"
+  #   key            = "cloudtrail/terraform.tfstate"
+  #   region         = "af-south-1"
+  #   dynamodb_table = "terraform-lock"
+  #   encrypt        = true
+  # }
+
+  # Local backend to use while S3 access fails
+
+  backend "local" {
+    path = "terraform.tfstate"
   }
 }
 
 provider "aws" {
-  region = var.aws_region
+  region  = "us-east-1" # match your CLI default
+  profile = "default"   # force Terraform to use CLI credentials
 
   default_tags {
     tags = {
       ManagedBy   = "terraform"
       Environment = var.environment
-      Project     = "cloudtrail-logging"
+      Project     = "cloudtrail-logging-v3"
       Owner       = "platform-team"
     }
   }
@@ -85,6 +93,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "cloudtrail" {
     id     = "transition-to-ia"
     status = "Enabled"
 
+    filter {} # <-- Add this line for Terraform 5.x compatibility
+
     transition {
       days          = 30
       storage_class = "STANDARD_IA"
@@ -98,6 +108,19 @@ resource "aws_s3_bucket_lifecycle_configuration" "cloudtrail" {
     expiration {
       days = 365
     }
+
+    # Old rule (without filter) - commented out
+    # transition {
+    #   days          = 30
+    #   storage_class = "STANDARD_IA"
+    # }
+    # transition {
+    #   days          = 90
+    #   storage_class = "GLACIER"
+    # }
+    # expiration {
+    #   days = 365
+    # }
   }
 }
 

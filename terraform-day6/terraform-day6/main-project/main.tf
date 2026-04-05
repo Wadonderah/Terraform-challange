@@ -1,16 +1,16 @@
-  # ─── REMOTE BACKEND CONFIG ───────────────────────────────────────────────
-  # NOTE: Run backend-bootstrap/main.tf FIRST before adding this block.
-  # After the S3 bucket and DynamoDB table exist, run: terraform init
-  # Terraform will detect the new backend and migrate your local state to S3.
+# ─── REMOTE BACKEND CONFIG ───────────────────────────────────────────────
+# NOTE: Run backend-bootstrap/main.tf FIRST before adding this block.
+# After the S3 bucket and DynamoDB table exist, run: terraform init
+# Terraform will detect the new backend and migrate your local state to S3.
 
 
 terraform {
   backend "s3" {
-    bucket = "wadondera-terraform-state-556684850027"
-    key = "global/s3/terraform.tfstate"
-    region = "us-east-1"
+    bucket         = "wadondera-terraform-state-556684850027"
+    key            = "global/s3/terraform.tfstate"
+    region         = "us-east-1"
     dynamodb_table = "terraform-state-locks"
-    encrypt = true
+    encrypt        = true
   }
 }
 

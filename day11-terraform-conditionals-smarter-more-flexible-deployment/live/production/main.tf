@@ -29,7 +29,7 @@ module "webserver_cluster" {
   source = "../../modules/webserver-cluster"
 
   cluster_name = "webserver-prod"
-  environment  = "production"     # ← single variable drives ALL environment differences
+  environment  = "production" # ← single variable drives ALL environment differences
 
   # Feature flags — monitoring on, DNS record created in production
   enable_detailed_monitoring = true
@@ -43,9 +43,9 @@ module "webserver_cluster" {
 
 # ─── Outputs ─────────────────────────────────────────────────────────────────
 
-output "alb_dns_name"      { value = module.webserver_cluster.alb_dns_name }
-output "alarm_arn"         { value = module.webserver_cluster.alarm_arn }        # real ARN in prod
-output "dns_record_fqdn"   { value = module.webserver_cluster.dns_record_fqdn }  # real FQDN in prod
-output "instance_type"     { value = module.webserver_cluster.instance_type }    # t3.medium
-output "cluster_min_size"  { value = module.webserver_cluster.cluster_min_size } # 3
-output "cluster_max_size"  { value = module.webserver_cluster.cluster_max_size } # 10
+output "alb_dns_name" { value = module.webserver_cluster.alb_dns_name }
+output "alarm_arn" { value = module.webserver_cluster.alarm_arn }               # real ARN in prod
+output "dns_record_fqdn" { value = module.webserver_cluster.dns_record_fqdn }   # real FQDN in prod
+output "instance_type" { value = module.webserver_cluster.instance_type }       # t3.medium
+output "cluster_min_size" { value = module.webserver_cluster.cluster_min_size } # 3
+output "cluster_max_size" { value = module.webserver_cluster.cluster_max_size } # 10

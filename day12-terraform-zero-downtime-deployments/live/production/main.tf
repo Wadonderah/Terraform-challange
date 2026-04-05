@@ -23,15 +23,15 @@ module "webserver_cluster" {
 
   cluster_name  = "webserver-prod"
   environment   = "production"
-  instance_type = "t3.micro"   # t3.medium in a paid account
+  instance_type = "t3.micro" # t3.medium in a paid account
   min_size      = 2
   max_size      = 4
 
-  blue_app_version  = "v1"
-  green_app_version = "v2"
+  blue_app_version   = "v1"
+  green_app_version  = "v2"
   active_environment = "blue"
 }
 
-output "alb_dns_name"         { value = module.webserver_cluster.alb_dns_name }
-output "active_environment"   { value = module.webserver_cluster.active_environment }
+output "alb_dns_name" { value = module.webserver_cluster.alb_dns_name }
+output "active_environment" { value = module.webserver_cluster.active_environment }
 output "traffic_loop_command" { value = module.webserver_cluster.traffic_loop_command }

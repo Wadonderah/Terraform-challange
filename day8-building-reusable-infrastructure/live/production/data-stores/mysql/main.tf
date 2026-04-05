@@ -32,13 +32,13 @@ provider "aws" {
 module "mysql" {
   source = "../../../../modules/data-stores/mysql"
 
-  db_name             = "proddb"
-  db_username         = var.db_username
-  db_password         = var.db_password
-  instance_class      = "db.t3.small"                                  # More headroom for real traffic
-  allocated_storage   = 100
-  skip_final_snapshot = false                                          # Always keep a final snapshot in production
-  backup_retention_period = 7                                          # 7-day rolling backups
+  db_name                 = "proddb"
+  db_username             = var.db_username
+  db_password             = var.db_password
+  instance_class          = "db.t3.small" # More headroom for real traffic
+  allocated_storage       = 100
+  skip_final_snapshot     = false # Always keep a final snapshot in production
+  backup_retention_period = 7     # 7-day rolling backups
 
   custom_tags = {
     CostCenter  = "engineering-prod"

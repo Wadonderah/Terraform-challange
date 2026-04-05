@@ -51,12 +51,12 @@ locals {
   # Version-to-colour mapping for visual distinction in the browser
 
   version_color = {
-    "v1" = "#1A56DB"   # blue
-    "v2" = "#16A34A"   # green
-    "v3" = "#D97706"   # amber
+    "v1" = "#1A56DB" # blue
+    "v2" = "#16A34A" # green
+    "v3" = "#D97706" # amber
   }
 
-  blue_color  = lookup(local.version_color, var.blue_app_version,  "#1A56DB")
+  blue_color  = lookup(local.version_color, var.blue_app_version, "#1A56DB")
   green_color = lookup(local.version_color, var.green_app_version, "#16A34A")
 
   common_tags = {
@@ -99,7 +99,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
   enable_dns_support   = true
-  tags = merge(local.common_tags, { Name = "${var.cluster_name}-vpc" })
+  tags                 = merge(local.common_tags, { Name = "${var.cluster_name}-vpc" })
 }
 
 resource "aws_subnet" "public" {
@@ -108,7 +108,7 @@ resource "aws_subnet" "public" {
   cidr_block              = "10.0.${count.index + 1}.0/24"
   availability_zone       = data.aws_availability_zones.available.names[count.index]
   map_public_ip_on_launch = true
-  tags = merge(local.common_tags, { Name = "${var.cluster_name}-public-${count.index + 1}" })
+  tags                    = merge(local.common_tags, { Name = "${var.cluster_name}-public-${count.index + 1}" })
 }
 
 resource "aws_internet_gateway" "main" {

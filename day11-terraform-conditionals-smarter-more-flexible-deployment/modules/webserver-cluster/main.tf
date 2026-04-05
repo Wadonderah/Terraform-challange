@@ -84,9 +84,9 @@ resource "aws_launch_template" "web" {
 
 resource "aws_autoscaling_group" "web" {
   name_prefix         = "${var.cluster_name}-"
-  min_size            = local.min_size    # ← conditional value from locals
-  max_size            = local.max_size    # ← conditional value from locals
-  vpc_zone_identifier = aws_subnet.public[*].id   # both subnets for HA
+  min_size            = local.min_size          # ← conditional value from locals
+  max_size            = local.max_size          # ← conditional value from locals
+  vpc_zone_identifier = aws_subnet.public[*].id # both subnets for HA
   target_group_arns   = [aws_lb_target_group.web.arn]
   health_check_type   = "ELB"
 
@@ -173,7 +173,7 @@ resource "aws_subnet" "public" {
   count = 2
 
   vpc_id                  = local.vpc_id
-  cidr_block              = "10.0.${count.index + 1}.0/24"   # 10.0.1.0/24 and 10.0.2.0/24
+  cidr_block              = "10.0.${count.index + 1}.0/24" # 10.0.1.0/24 and 10.0.2.0/24
   availability_zone       = data.aws_availability_zones.available.names[count.index]
   map_public_ip_on_launch = true
 
@@ -276,7 +276,7 @@ resource "aws_lb" "web" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
-  subnets            = aws_subnet.public[*].id   # both subnets — satisfies the 2-AZ requirement
+  subnets            = aws_subnet.public[*].id # both subnets — satisfies the 2-AZ requirement
 
   tags = local.common_tags
 }
