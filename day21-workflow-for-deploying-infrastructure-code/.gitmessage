@@ -1,0 +1,69 @@
+# Infrastructure Change: <brief description>
+#
+# Provide a clear, concise summary of the infrastructure change in the first line.
+# Use imperative mood: "Add CloudWatch alarms" not "Added CloudWatch alarms"
+#
+# Example: "Add CloudWatch monitoring to webserver cluster"
+
+## What Changed
+# Describe WHAT infrastructure resources are being modified and WHY.
+# Focus on business value and operational impact.
+#
+# Example:
+# - Added 4 CloudWatch alarms for CPU and ALB metrics
+# - Created SNS topic for alert notifications
+# - Deployed CloudWatch dashboard for cluster visibility
+# - Improves incident response time by 50%
+
+## Terraform Plan Summary
+# REQUIRED: Include resource counts from terraform plan output
+# Created: 0 | Modified: 0 | Destroyed: 0
+#
+# If any resources are destroyed, explain why and confirm approval.
+
+## Blast Radius
+# REQUIRED: What breaks if this apply fails halfway through?
+# Consider:
+# - Which environments are affected?
+# - Are there downstream dependencies?
+# - Does this touch shared resources (VPC, IAM, security groups)?
+# - Will in-flight requests be interrupted?
+#
+# Example:
+# - All changes are additive (no modifications to existing resources)
+# - If apply fails after SNS topic creation, orphaned topic can be cleaned up
+# - No production traffic affected
+# - Rollback: git revert + re-run pipeline
+
+## Testing
+# Confirm testing performed:
+# - [ ] terraform fmt passed
+# - [ ] terraform validate passed
+# - [ ] terraform plan reviewed
+# - [ ] Unit tests passed (terraform test)
+# - [ ] Manual testing in dev environment
+
+## Related
+# Link to related tickets, PRs, or documentation
+# Closes #<issue-number>
+# Related to #<issue-number>
+# See: <documentation-url>
+
+# ──────────────────────────────────────────────────────────────────
+# Commit Message Guidelines:
+# 
+# 1. First line: 50 chars max, imperative mood
+# 2. Blank line after first line
+# 3. Body: Wrap at 72 characters
+# 4. Include plan summary (created/modified/destroyed counts)
+# 5. Document blast radius for all changes
+# 6. Link to tickets/PRs
+# 7. Use conventional commit prefixes:
+#    - infra: Infrastructure changes
+#    - feat: New features
+#    - fix: Bug fixes
+#    - docs: Documentation only
+#    - test: Test changes
+#    - refactor: Code refactoring
+#    - chore: Maintenance tasks
+# ──────────────────────────────────────────────────────────────────

@@ -1,0 +1,40 @@
+# ==============================================================================
+# sentinel/cost-estimation.sentinel
+#
+# PURPOSE: Gate deployments that would increase monthly cost beyond a threshold.
+# Requires Terraform Cloud cost estimation to be enabled on the workspace.
+#
+# ENFORCEMENT LEVEL: soft-mandatory
+#   Engineers CAN override this with a justification (tracked in audit log).
+#   This is intentional — legitimate cost increases should go through a human
+#   decision, not be blocked forever.
+# ==============================================================================
+
+import "tfrun"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Cost thresholds — tune per environment
+# ─────────────────────────────────────────────────────────────────────────────
+max_monthly_cost_increase = switch tfrun.workspace.name {
+  case matches "^prod-.*":  500.00         # production: $500/mo increase triggers review
+  case matches "^staging-.*": 100.00       # staging: $100/mo
+  default:                    50.00        # dev/sandbox: $50/mo
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Cost estimation data from the plan
+# ─────────────────────────────────────────────────────────────────────────────
+proposed_increase = tfrun.cost_estimate.delta_monthly_cost
+
+cost_within_threshold = rule {
+  proposed_increase <= max_monthly_cost_increase
+}
+
+# Require a non-null cost estimate — if cost estimation is disabled, fail safe
+cost_estimate_available = rule {
+  tfrun.cost_estimate is not null
+}
+
+main = rule {
+  cost_estimate_available and cost_within_threshold
+}

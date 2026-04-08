@@ -1,0 +1,106 @@
+# Pre-commit hooks for Terraform infrastructure code
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+#
+# These hooks enforce code quality and security standards before commits,
+# catching issues early in the development cycle.
+
+repos:
+  # Terraform-specific hooks
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.83.5
+    hooks:
+      # Format Terraform files
+      - id: terraform_fmt
+        name: Terraform fmt
+        description: Rewrites Terraform files to canonical format
+        
+      # Validate Terraform syntax
+      - id: terraform_validate
+        name: Terraform validate
+        description: Validates Terraform configuration files
+        args:
+          - --hook-config=--retry-once-with-cleanup=true
+          
+      # Generate documentation
+      - id: terraform_docs
+        name: Terraform docs
+        description: Inserts terraform-docs output into README.md
+        args:
+          - --hook-config=--path-to-file=README.md
+          - --hook-config=--add-to-existing-file=true
+          - --hook-config=--create-file-if-not-exist=true
+          
+      # Lint with tflint
+      - id: terraform_tflint
+        name: TFLint
+        description: Lints Terraform files with tflint
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+          
+      # Security scanning with tfsec
+      - id: terraform_tfsec
+        name: TFSec
+        description: Static security analysis with tfsec
+        args:
+          - --args=--minimum-severity=MEDIUM
+          - --args=--exclude-downloaded-modules
+
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      # Prevent large files from being committed
+      - id: check-added-large-files
+        name: Check for large files
+        args: ['--maxkb=500']
+        
+      # Check for merge conflicts
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+        
+      # Check YAML syntax
+      - id: check-yaml
+        name: Check YAML
+        args: ['--safe']
+        
+      # Check JSON syntax
+      - id: check-json
+        name: Check JSON
+        
+      # Ensure files end with newline
+      - id: end-of-file-fixer
+        name: Fix end of files
+        
+      # Remove trailing whitespace
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+        args: ['--markdown-linebreak-ext=md']
+        
+      # Detect private keys
+      - id: detect-private-key
+        name: Detect private keys
+        
+      # Prevent commits to main branch
+      - id: no-commit-to-branch
+        name: Don't commit to main
+        args: ['--branch', 'main']
+
+  # Commit message validation
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.0.0
+    hooks:
+      - id: conventional-pre-commit
+        name: Conventional Commits
+        stages: [commit-msg]
+        args:
+          - feat
+          - fix
+          - docs
+          - style
+          - refactor
+          - test
+          - chore
+          - infra
+
+# Made with Bob

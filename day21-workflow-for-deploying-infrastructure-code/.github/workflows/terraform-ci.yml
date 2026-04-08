@@ -1,0 +1,223 @@
+# ==============================================================================
+# .github/workflows/terraform-ci.yml
+#
+# Infrastructure CI pipeline — runs on every PR targeting main.
+# Implements Step 5 of the infrastructure workflow: automated tests.
+#
+# What runs and why:
+#   fmt --check    → catches inconsistent formatting before review (cosmetic noise)
+#   validate       → catches HCL syntax errors and missing required variables
+#   tflint         → catches provider-specific mistakes fmt/validate miss
+#   tfsec          → static security analysis (open ports, unencrypted storage, etc.)
+#   plan           → generates the diff; output is posted back to the PR
+#   terraform test → runs unit tests in the tests/ directory (Terraform 1.6+)
+#
+# The plan output is posted as a PR comment so reviewers see exactly what
+# will change without leaving GitHub. This is the infrastructure equivalent
+# of a code diff reviewer — the plan IS the diff.
+# ==============================================================================
+
+name: Terraform CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "**.tf"
+      - "**.tfvars"
+      - ".github/workflows/terraform-ci.yml"
+
+permissions:
+  contents: read
+  pull-requests: write  # needed to post plan output as PR comment
+  id-token: write       # needed for OIDC auth to AWS (no long-lived keys)
+
+env:
+  TF_VERSION: "1.9.0"
+  TFLINT_VERSION: "0.51.0"
+  TFSEC_VERSION: "1.28.6"
+  AWS_REGION: "us-east-1"
+  TF_WORKSPACE: "dev"
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 1: Format check — fast fail on cosmetic issues
+  # ─────────────────────────────────────────────────────────────────────────
+  fmt:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: terraform fmt
+        run: terraform fmt -check -recursive -diff
+        working-directory: modules/webserver-cluster
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 2: Validate — syntax + type checking
+  # ─────────────────────────────────────────────────────────────────────────
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: terraform init (no backend — validation only)
+        run: terraform init -backend=false
+        working-directory: modules/webserver-cluster
+
+      - name: terraform validate
+        run: terraform validate
+        working-directory: modules/webserver-cluster
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 3: TFLint — provider-aware linting
+  # ─────────────────────────────────────────────────────────────────────────
+  tflint:
+    name: TFLint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: ${{ env.TFLINT_VERSION }}
+
+      - name: tflint init
+        run: tflint --init
+        working-directory: modules/webserver-cluster
+
+      - name: tflint run
+        run: tflint --format=compact
+        working-directory: modules/webserver-cluster
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 4: tfsec — security static analysis
+  # ─────────────────────────────────────────────────────────────────────────
+  tfsec:
+    name: Security Scan (tfsec)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: modules/webserver-cluster
+          soft_fail: false  # fail the job on HIGH/CRITICAL findings
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 5: Terraform Plan — posts output to PR comment
+  # ─────────────────────────────────────────────────────────────────────────
+  plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    needs: [fmt, validate]   # only plan if basic checks pass
+    environment: dev         # requires environment secret approval if configured
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      # OIDC auth — no static AWS keys stored in GitHub secrets
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: terraform init
+        id: init
+        run: terraform init
+        working-directory: modules/webserver-cluster
+
+      - name: terraform workspace select
+        run: terraform workspace select ${{ env.TF_WORKSPACE }} || terraform workspace new ${{ env.TF_WORKSPACE }}
+        working-directory: modules/webserver-cluster
+
+      - name: terraform plan
+        id: plan
+        run: |
+          terraform plan \
+            -out=ci.tfplan \
+            -no-color \
+            -input=false \
+            2>&1 | tee plan_output.txt
+          echo "exitcode=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+        working-directory: modules/webserver-cluster
+        continue-on-error: true  # let us post the output even on plan failure
+
+      # Post the plan output as a PR comment — this IS the review artifact
+      - name: Post plan to PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const planOutput = fs.readFileSync('modules/webserver-cluster/plan_output.txt', 'utf8');
+            const exitCode = '${{ steps.plan.outputs.exitcode }}';
+            const status = exitCode === '0' ? '✅ Plan succeeded' :
+                           exitCode === '2' ? '⚠️ Plan has changes' : '❌ Plan failed';
+
+            const body = `## Terraform Plan — ${status}
+
+            \`\`\`hcl
+            ${planOutput.substring(0, 60000)}
+            \`\`\`
+
+            > Plan exit code: \`${exitCode}\`
+            > **0** = no changes, **2** = changes present, other = error
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+
+      - name: Fail if plan errored
+        if: steps.plan.outputs.exitcode != '0' && steps.plan.outputs.exitcode != '2'
+        run: exit 1
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 6: Terraform Test — unit tests (Terraform 1.6+ native testing)
+  # ─────────────────────────────────────────────────────────────────────────
+  test:
+    name: Terraform Tests
+    runs-on: ubuntu-latest
+    needs: [validate]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: terraform init
+        run: terraform init -backend=false
+        working-directory: modules/webserver-cluster
+
+      - name: terraform test
+        run: terraform test
+        working-directory: modules/webserver-cluster

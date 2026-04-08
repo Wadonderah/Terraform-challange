@@ -1,0 +1,128 @@
+# ==============================================================================
+# sentinel/require-tags.sentinel
+#
+# PURPOSE: Enforce mandatory tagging on all AWS resources for cost allocation,
+# ownership tracking, and compliance reporting.
+#
+# ENFORCEMENT LEVEL: soft-mandatory
+#   Teams can override with justification for resources that cannot be tagged
+#   (e.g., some networking resources), but this creates an audit trail.
+# ==============================================================================
+
+import "tfplan/v2" as tfplan
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Required tags for all taggable resources
+# ─────────────────────────────────────────────────────────────────────────────
+
+required_tags = [
+  "Environment",  # dev, staging, prod
+  "Owner",        # team or individual responsible
+  "CostCenter",   # for chargeback/showback
+  "Project",      # project or product name
+]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Resource types that support tags
+# Not all AWS resources support tagging - exclude those that don't
+# ─────────────────────────────────────────────────────────────────────────────
+
+taggable_resource_types = [
+  "aws_instance",
+  "aws_autoscaling_group",
+  "aws_launch_template",
+  "aws_lb",
+  "aws_lb_target_group",
+  "aws_security_group",
+  "aws_vpc",
+  "aws_subnet",
+  "aws_route_table",
+  "aws_internet_gateway",
+  "aws_nat_gateway",
+  "aws_eip",
+  "aws_s3_bucket",
+  "aws_dynamodb_table",
+  "aws_db_instance",
+  "aws_rds_cluster",
+  "aws_elasticache_cluster",
+  "aws_ecs_cluster",
+  "aws_ecs_service",
+  "aws_ecs_task_definition",
+  "aws_eks_cluster",
+  "aws_lambda_function",
+  "aws_cloudwatch_log_group",
+  "aws_sns_topic",
+  "aws_sqs_queue",
+  "aws_kms_key",
+  "aws_iam_role",
+  "aws_cloudwatch_metric_alarm",
+  "aws_cloudwatch_dashboard",
+]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Collect all taggable resources being created or updated
+# ─────────────────────────────────────────────────────────────────────────────
+
+taggable_resources = filter tfplan.resource_changes as _, rc {
+  rc.type in taggable_resource_types and
+  rc.mode is "managed" and
+  (rc.change.actions contains "create" or rc.change.actions contains "update")
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Validation: All required tags must be present and non-empty
+# ─────────────────────────────────────────────────────────────────────────────
+
+all_tags_present = rule {
+  all taggable_resources as address, resource {
+    all required_tags as _, tag {
+      # Check if tags map exists
+      resource.change.after.tags else {} contains tag and
+      # Check if tag value is non-empty
+      length(resource.change.after.tags[tag] else "") > 0
+    } else {
+      print("❌", address, "is missing required tag:", tag)
+      false
+    }
+  }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Validation: Environment tag must be one of allowed values
+# ─────────────────────────────────────────────────────────────────────────────
+
+allowed_environments = ["dev", "staging", "prod", "sandbox", "test"]
+
+environment_tag_valid = rule {
+  all taggable_resources as address, resource {
+    resource.change.after.tags.Environment else "" in allowed_environments
+  } else {
+    print("❌", address, "has invalid Environment tag. Allowed:", allowed_environments)
+    false
+  }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Validation: Owner tag must be a valid email or team name
+# ─────────────────────────────────────────────────────────────────────────────
+
+owner_tag_valid = rule {
+  all taggable_resources as address, resource {
+    # Owner must contain @ (email) or be a known team name
+    resource.change.after.tags.Owner else "" matches ".*@.*" or
+    resource.change.after.tags.Owner else "" matches "^(infrastructure|devops|platform|security|data)-team$"
+  } else {
+    print("❌", address, "has invalid Owner tag. Must be email or team name (e.g., infrastructure-team)")
+    false
+  }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Main rule - all validations must pass
+# ─────────────────────────────────────────────────────────────────────────────
+
+main = rule {
+  all_tags_present and
+  environment_tag_valid and
+  owner_tag_valid
+}

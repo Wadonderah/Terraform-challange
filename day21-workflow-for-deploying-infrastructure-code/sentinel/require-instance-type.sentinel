@@ -1,0 +1,116 @@
+# ==============================================================================
+# sentinel/require-instance-type.sentinel
+#
+# PURPOSE: Prevent EC2 instances with expensive or unapproved types from being
+# deployed — catches cost accidents before they hit production.
+#
+# ENFORCED ON: All Terraform plans in every workspace.
+# ENFORCEMENT LEVEL: Hard-mandatory (apply is blocked, not just warned).
+#
+# HOW THIS DIFFERS FROM `terraform validate`:
+#   - terraform validate: checks HCL syntax and type correctness only. It has
+#     NO knowledge of what values are acceptable — it just confirms the config
+#     is structurally valid Terraform.
+#   - Sentinel: enforces BUSINESS RULES against the resolved plan. It sees the
+#     final computed values (instance_type = "m5.24xlarge") and can reject them
+#     before a single API call reaches AWS. Sentinel runs AFTER plan, BEFORE
+#     apply — in the gap where validate cannot operate.
+# ==============================================================================
+
+import "tfplan/v2" as tfplan
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Policy 1: Allowed EC2 instance types
+# Add types here as your team standardises on them. Requiring a PR to expand
+# this list creates an audit trail for every instance type approval.
+# ─────────────────────────────────────────────────────────────────────────────
+
+allowed_instance_types = [
+  "t3.micro",
+  "t3.small",
+  "t3.medium",
+  "t3.large",
+  "t2.micro",   # kept for backwards compatibility with older launch configs
+  "t2.small",
+  "t2.medium",
+]
+
+# Collect every aws_instance resource change in the plan
+ec2_instances = filter tfplan.resource_changes as _, rc {
+  rc.type is "aws_instance" and
+  (rc.change.actions contains "create" or rc.change.actions contains "update")
+}
+
+# Every instance must use an approved type
+instance_type_allowed = rule {
+  all ec2_instances as _, instance {
+    instance.change.after.instance_type in allowed_instance_types
+  }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Policy 2: Launch template instance types (covers ASG-based clusters)
+# Day 19/20 webserver cluster uses a launch template, not aws_instance directly
+# ─────────────────────────────────────────────────────────────────────────────
+
+launch_templates = filter tfplan.resource_changes as _, rc {
+  rc.type is "aws_launch_template" and
+  (rc.change.actions contains "create" or rc.change.actions contains "update")
+}
+
+launch_template_type_allowed = rule {
+  all launch_templates as _, lt {
+    lt.change.after.instance_type in allowed_instance_types
+  }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Policy 3: No unencrypted EBS root volumes
+# Encryption must be enabled at the block device mapping level.
+# ─────────────────────────────────────────────────────────────────────────────
+
+ebs_encrypted = rule {
+  all ec2_instances as _, instance {
+    all instance.change.after.root_block_device as _, bd {
+      bd.encrypted is true
+    }
+  }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Policy 4: Prevent accidental destruction of stateful resources in production
+# This checks the workspace name — production workspaces require all destroys
+# to be explicitly approved via a separate Terraform Cloud approval gate.
+# ─────────────────────────────────────────────────────────────────────────────
+
+import "tfrun"
+
+is_production = tfrun.workspace.name matches "^prod-.*"
+
+stateful_resource_types = [
+  "aws_db_instance",
+  "aws_rds_cluster",
+  "aws_s3_bucket",
+  "aws_dynamodb_table",
+  "aws_elasticache_cluster",
+]
+
+destructive_changes = filter tfplan.resource_changes as _, rc {
+  rc.change.actions contains "delete" and
+  rc.type in stateful_resource_types
+}
+
+no_production_destroy = rule when is_production {
+  length(destructive_changes) is 0
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Main rule — ALL sub-rules must pass
+# ─────────────────────────────────────────────────────────────────────────────
+
+main = rule {
+  instance_type_allowed and
+  launch_template_type_allowed and
+  ebs_encrypted and
+  no_production_destroy
+}

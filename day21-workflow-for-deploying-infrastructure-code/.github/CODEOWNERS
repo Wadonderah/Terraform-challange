@@ -1,0 +1,32 @@
+# CODEOWNERS - Define code ownership and required reviewers
+# 
+# Infrastructure changes require infrastructure team approval.
+# Destructive changes (detected via plan output) require additional approval.
+#
+# Syntax: <file-pattern> @github-username @github-team
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# All Terraform files require infrastructure team review
+*.tf @infrastructure-team
+*.tfvars @infrastructure-team
+*.hcl @infrastructure-team
+
+# Sentinel policies require infrastructure leads approval
+sentinel/*.sentinel @infrastructure-leads
+sentinel.hcl @infrastructure-leads
+
+# GitHub Actions workflows require DevOps team approval
+.github/workflows/*.yml @devops-team
+
+# Deployment scripts require senior infrastructure approval
+scripts/*.sh @infrastructure-leads
+
+# State management and backend configuration
+backend.tf @infrastructure-leads
+terraform.tfstate* @infrastructure-leads
+
+# Module changes require module maintainers approval
+modules/ @infrastructure-team @module-maintainers
+
+# Documentation changes can be approved by any team member
+*.md @infrastructure-team

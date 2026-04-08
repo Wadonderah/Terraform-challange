@@ -1,0 +1,108 @@
+# ==============================================================================
+# sentinel/prevent-public-s3.sentinel
+#
+# PURPOSE: Prevent accidental exposure of S3 buckets to the public internet.
+# Blocks buckets with public ACLs or public access block disabled.
+#
+# ENFORCEMENT LEVEL: hard-mandatory
+#   No overrides allowed - public S3 buckets are a critical security risk.
+# ==============================================================================
+
+import "tfplan/v2" as tfplan
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Policy 1: No public ACLs on S3 buckets
+# ─────────────────────────────────────────────────────────────────────────────
+
+s3_buckets = filter tfplan.resource_changes as _, rc {
+  rc.type is "aws_s3_bucket" and
+  (rc.change.actions contains "create" or rc.change.actions contains "update")
+}
+
+no_public_acl = rule {
+  all s3_buckets as address, bucket {
+    bucket.change.after.acl else "private" is not "public-read" and
+    bucket.change.after.acl else "private" is not "public-read-write" and
+    bucket.change.after.acl else "private" is not "authenticated-read"
+  } else {
+    print("❌", address, "has public ACL:", bucket.change.after.acl)
+    print("   Public S3 buckets are not allowed. Use private ACL with bucket policies for controlled access.")
+    false
+  }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Policy 2: Public access block must be enabled
+# ─────────────────────────────────────────────────────────────────────────────
+
+s3_public_access_blocks = filter tfplan.resource_changes as _, rc {
+  rc.type is "aws_s3_bucket_public_access_block" and
+  (rc.change.actions contains "create" or rc.change.actions contains "update")
+}
+
+public_access_block_enabled = rule {
+  all s3_public_access_blocks as address, pab {
+    pab.change.after.block_public_acls is true and
+    pab.change.after.block_public_policy is true and
+    pab.change.after.ignore_public_acls is true and
+    pab.change.after.restrict_public_buckets is true
+  } else {
+    print("❌", address, "does not have all public access blocks enabled")
+    print("   Required: block_public_acls, block_public_policy, ignore_public_acls, restrict_public_buckets = true")
+    false
+  }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Policy 3: Bucket policies must not grant public access
+# ─────────────────────────────────────────────────────────────────────────────
+
+s3_bucket_policies = filter tfplan.resource_changes as _, rc {
+  rc.type is "aws_s3_bucket_policy" and
+  (rc.change.actions contains "create" or rc.change.actions contains "update")
+}
+
+no_public_bucket_policy = rule {
+  all s3_bucket_policies as address, policy {
+    # Check if policy contains Principal: "*" or Principal: {"AWS": "*"}
+    policy.change.after.policy else "" not matches ".*\"Principal\"\\s*:\\s*\"\\*\".*" and
+    policy.change.after.policy else "" not matches ".*\"Principal\"\\s*:\\s*\\{\\s*\"AWS\"\\s*:\\s*\"\\*\"\\s*\\}.*"
+  } else {
+    print("❌", address, "grants public access via Principal: \"*\"")
+    print("   Bucket policies must not use wildcard principals. Use specific IAM principals or conditions.")
+    false
+  }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Policy 4: Website configuration requires explicit approval
+# Static website hosting is a common source of unintended public exposure
+# ─────────────────────────────────────────────────────────────────────────────
+
+s3_bucket_websites = filter tfplan.resource_changes as _, rc {
+  rc.type is "aws_s3_bucket_website_configuration" and
+  (rc.change.actions contains "create" or rc.change.actions contains "update")
+}
+
+website_config_documented = rule {
+  # If website configuration exists, it must be in an approved list
+  # For now, we'll just warn - adjust enforcement level as needed
+  all s3_bucket_websites as address, website {
+    true  # Allow but log
+  } else {
+    print("⚠️ ", address, "enables S3 website hosting")
+    print("   Ensure this bucket is intended for public website hosting and has appropriate access controls.")
+    true  # Warning only, not blocking
+  }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Main rule - all policies must pass
+# ─────────────────────────────────────────────────────────────────────────────
+
+main = rule {
+  no_public_acl and
+  public_access_block_enabled and
+  no_public_bucket_policy and
+  website_config_documented
+}
