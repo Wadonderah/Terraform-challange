@@ -26,12 +26,8 @@ provider "aws" {
 
 # ── S3 bucket for Terraform state ─────────────────────────────────────────
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = var.state_bucket_name
-
-  # Prevent accidental deletion of this bucket
-  lifecycle {
-    prevent_destroy = true
-  }
+  bucket        = var.state_bucket_name
+  force_destroy = true
 
   tags = {
     Name      = var.state_bucket_name
