@@ -1,0 +1,12 @@
+# sentinel/require-terraform-tag.sentinel
+# Enforcement: soft-mandatory
+# Every resource change must include ManagedBy = "terraform" in its tags.
+# Catches shadow infrastructure before it reaches production.
+
+import "tfplan/v2" as tfplan
+
+main = rule {
+  all tfplan.resource_changes as _, rc {
+    rc.change.after.tags["ManagedBy"] is "terraform"
+  }
+}

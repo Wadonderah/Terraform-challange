@@ -1,0 +1,11 @@
+# sentinel/cost-check.sentinel
+# Enforcement: advisory in dev/stage, soft-mandatory in prod
+# Blocks apply if a single PR increases monthly cost by more than $50.
+
+import "tfrun"
+
+maximum_monthly_increase = 50.0
+
+main = rule {
+  tfrun.cost_estimate.delta_monthly_cost < maximum_monthly_increase
+}

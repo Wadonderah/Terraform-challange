@@ -94,9 +94,7 @@ Created: 7 | Modified: 0 | Destroyed: 0
 - [x] Unit tests passed
 
 Closes #123
-```
 
----
 
 ### Step 4: Submit for Review (Pull Request)
 
@@ -185,8 +183,6 @@ jobs:
 ```
 
 **Critical Difference:** `terraform plan` in CI is **not optional** - it's the primary review artifact. The plan output must be posted to the PR so reviewers can see exact changes without running anything locally.
-
----
 
 ### Step 6: Merge and Release
 

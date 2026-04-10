@@ -1,0 +1,21 @@
+# sentinel/allowed-instance-types.sentinel
+# Enforcement: hard-mandatory
+# Blocks apply if any EC2 instance or launch template uses an unapproved type.
+# No override possible — apply is fully blocked.
+
+import "tfplan/v2" as tfplan
+
+allowed_types = [
+  "t3.micro",
+  "t3.small",
+  "t3.medium",
+  "m5.large",
+  "m5.xlarge",
+]
+
+main = rule {
+  all tfplan.resource_changes as _, rc {
+    rc.type not in ["aws_instance", "aws_launch_template"] or
+    rc.change.after.instance_type in allowed_types
+  }
+}
