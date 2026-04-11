@@ -152,7 +152,7 @@ D) Terraform Enterprise does not support Sentinel policies
 **ANSWER: B**
 Terraform Cloud (TFC) is HashiCorp's SaaS offering at app.terraform.io. Terraform Enterprise (TFE) is the same product but installed on your own infrastructure — for organisations that cannot send data to external SaaS (government, banking, compliance-regulated industries).
 
----
+
 
 **Q14.** A developer makes changes directly in the AWS console to an EC2 instance managed by Terraform. What happens on the next `terraform plan`?
 A) Terraform ignores the manual change
