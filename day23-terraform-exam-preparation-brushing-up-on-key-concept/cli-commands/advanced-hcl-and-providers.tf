@@ -42,7 +42,6 @@ module "west_vpc" {
 **Exam trap:** Resources that don't specify a `provider` argument use the default
 (un-aliased) provider. Resources that need to use an aliased provider MUST specify it.
 
----
 
 ## Variable Types — Complete Reference
 # Simple types
