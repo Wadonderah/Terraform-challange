@@ -1,0 +1,84 @@
+# .github/workflows/terraform.yml
+# Day 30 | 30-Day Terraform Challenge | AWS AI/ML UserGroup Kenya | EveOps
+#
+# FILL-IN-THE-BLANK Q10: saved plan file pattern
+# Step 1: terraform plan -out=myplan.tfplan
+# Step 2: Human approval gate
+# Step 3: terraform apply myplan.tfplan (no re-plan, no prompt)
+#
+# READINESS CHECK Q1: terraform init is always the first step
+# READINESS CHECK Q6: plan immediately before apply — no stale plans
+
+name: Day 30 Final Terraform CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  TF_VERSION: "1.5.7"
+
+jobs:
+  validate:
+    name: Fmt + Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      # FILL-IN-THE-BLANK Q1: fmt -check reports, does not reformat in CI
+      - run: terraform fmt -check -recursive
+      # READINESS CHECK Q1: init first, always
+      - run: terraform init -backend=false
+      # validate requires init — providers must be installed
+      - run: terraform validate
+
+  plan:
+    name: Plan + Save (FILL-IN-THE-BLANK Q10)
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      - run: terraform init
+      - name: Save plan to file (Q10 answer in practice)
+        run: terraform plan -out=myplan.tfplan -var-file="environments/dev/terraform.tfvars"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Show saved plan for review
+        run: terraform show myplan.tfplan
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: myplan.tfplan
+
+  apply:
+    name: Apply Saved Plan
+    runs-on: ubuntu-latest
+    needs: plan
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      - run: terraform init
+      - uses: actions/download-artifact@v4
+        with: { name: tfplan }
+      # FILL-IN-THE-BLANK Q10: terraform apply myplan.tfplan
+      # No re-plan. No confirmation prompt. Executes exactly the saved plan.
+      - run: terraform apply myplan.tfplan
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

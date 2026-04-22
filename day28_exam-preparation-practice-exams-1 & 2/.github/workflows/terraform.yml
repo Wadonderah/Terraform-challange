@@ -1,0 +1,117 @@
+# =============================================================================
+# .github/workflows/terraform.yml
+# Day 28: Terraform Associate Exam Prep
+# 30-Day Terraform Challenge | AWS AI/ML UserGroup Kenya | EveOps
+#
+# EXAM CONCEPT: Terraform Cloud CI/CD integration
+# This pipeline demonstrates how Terraform Cloud remote operations work
+# in a real CI/CD context. The pipeline triggers a remote plan/apply in
+# Terraform Cloud rather than running locally.
+#
+# EXAM CONCEPT: Remote operations vs remote state
+# When execution_mode = "remote" in the TF Cloud workspace:
+#   - terraform plan runs in Terraform Cloud workers (NOT on the GitHub runner)
+#   - Output streams back to the pipeline logs
+#   - Sentinel policies are evaluated before apply
+# When execution_mode = "local":
+#   - terraform plan runs on the GitHub runner
+#   - State is still stored in Terraform Cloud
+#   - Sentinel policies are NOT enforced
+# =============================================================================
+
+name: Terraform CI/CD - Day 28 Exam Prep
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  TF_VERSION: "1.5.7"
+  TF_CLOUD_ORGANIZATION: "your-org-name"  # Replace with your TF Cloud org
+
+jobs:
+  terraform-validate:
+    name: Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        # EXAM NOTE: terraform fmt only formats .tf files.
+        # It does not change resource configurations.
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+        # -backend=false skips backend init for validation only
+
+      - name: Terraform Validate
+        run: terraform validate
+        # EXAM NOTE: terraform validate checks syntax and internal consistency.
+        # It does NOT contact AWS or check if resources exist.
+
+  terraform-plan:
+    name: Plan
+    runs-on: ubuntu-latest
+    needs: terraform-validate
+    if: github.event_name == 'pull_request'
+    environment: dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Init
+        run: terraform init
+        # With Terraform Cloud backend configured, this authenticates to TF Cloud
+
+      - name: Terraform Plan
+        run: terraform plan -var-file="environments/dev/terraform.tfvars" -no-color
+        env:
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+          # EXAM NOTE: secrets passed as TF_VAR_* are still stored in state.
+          # sensitive = true only suppresses them in CLI output.
+        # EXAM NOTE: If TF Cloud workspace execution_mode = "remote",
+        # this plan runs IN Terraform Cloud, not on this GitHub runner.
+        # The output streams back to this log.
+
+  terraform-apply:
+    name: Apply
+    runs-on: ubuntu-latest
+    needs: terraform-validate
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -var-file="environments/prod/terraform.tfvars"
+        env:
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
